@@ -1,0 +1,17 @@
+{
+    "name": "BarChatServer",
+    "description": "a simple server for IM app BarChat",
+    "version": "1.0.0",
+    "main": "server.js",
+    "author": "Tee-ee",
+    "license": "ISC",
+    "repository": { 
+        "type" : "git", 
+        "url" : "http://github.com/Tee-ee/BarChatServer.git" 
+    },
+    "dependencies": {
+        "json-socket": "~0.3.0",
+        "mysql": "~2.13.0",
+        "colors": "~1.1.2"
+    }
+}
