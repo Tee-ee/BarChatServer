@@ -4,7 +4,7 @@ FrameType.PeerMessage       = 1;
 FrameType.Login             = 2;
 FrameType.Register          = 3;
 FrameType.SearchUser        = 4;
-FrameType.FriendRequest     = 5;
+FrameType.FriendTransaction = 5;
 FrameType.Unused_1	        = 6;
 FrameType.Unused_2	        = 7;
 FrameType.TokenAssign       = 8;
@@ -49,7 +49,7 @@ function handleConnect() {
                 socket.sendMessage(message);
                 break;
 
-			case FrameType.FriendRequest:
+			case FrameType.FriendTransaction:
 				console.log('[SUCCEED]'.green + 'receive friend request from %s, named %s, message:%s',message.data.from, message.data.displayName, message.data.message);
 				break;
         }

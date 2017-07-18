@@ -18,6 +18,10 @@ FrameType.FriendListRequest = 10;
 FrameType.FriendListResponse= 11;
 FrameType.Error             = 12;
 
+var FriendTransactionState = {};
+FriendTransactionState.Request   = 0;
+FriendTransactionState.Complete  = 1;
+
 var FrameVersion = 1;
 
 
@@ -140,7 +144,7 @@ function handleServerConnection(serverConnection){
                     unreadMessage.date      = values[i].date;
                     unreadMessage.type      = values[i].messageType;
                         
-                    var frame = createFrame(FrameType.PeerMessage, unreadMessage);
+                    var frame = createFrame(unreadMessage.type < 10 ? FrameType.PeerMessage : FrameType.FriendTransaction, unreadMessage);
                     socket.sendMessage(frame);
                     console.log('[SUCCEED]'.green + ' send unread message to: %s', phoneNumber);
                 };
@@ -214,11 +218,18 @@ function handleServerConnection(serverConnection){
 // friend transaction can be merged into message
 		function dealFriendTransaction() {
 			var toPhoneNumber = message.data.to;
-			if (clients[toPhoneNumber]) {
-				var socket = clients[toPhoneNumber];
-				socket.sendMessage(message);
-				console.log('[SUCCEED]'.green + 'forward friend transaction to %s', toPhoneNumber);
-			};
+            message.data.ID = messageID;
+            messageID++;
+            var transactionState = message.data.type;
+            if (transactionState == FriendTransactionState.Request) {
+                if (clients[toPhoneNumber]) {
+                    var socket = clients[toPhoneNumber];
+                    socket.sendMessage(message);
+                    console.log('[SUCCEED]'.green + 'forward friend transaction to %s', toPhoneNumber);
+                };
+            } else {
+                stageMessage();
+            };
 		}
 
         function configureMessage(tempID, currentID) {
