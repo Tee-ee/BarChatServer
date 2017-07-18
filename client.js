@@ -5,8 +5,8 @@ FrameType.Login             = 2;
 FrameType.Register          = 3;
 FrameType.SearchUser        = 4;
 FrameType.FriendRequest     = 5;
-FrameType.FriendResponse    = 6;
-FrameType.FriendRefuse      = 7;
+FrameType.Unused_1	        = 6;
+FrameType.Unused_2	        = 7;
 FrameType.TokenAssign       = 8;
 FrameType.MessageConfigure  = 9;
 FrameType.Error             = 10;
@@ -21,9 +21,9 @@ var JSONSocket = require('json-socket');
 
 var port = 6596;
 
-var host = '192.168.1.147';
+var host = '127.0.0.1';
 
-var phoneNumber = '15689932457';
+var phoneNumber = '13031636571';
 
 var socket = new JSONSocket(new net.Socket());
 
@@ -48,6 +48,10 @@ function handleConnect() {
                 message.data.from = phoneNumber;
                 socket.sendMessage(message);
                 break;
+
+			case FrameType.FriendRequest:
+				console.log('[SUCCEED]'.green + 'receive friend request from %s, named %s, message:%s',message.data.from, message.data.displayName, message.data.message);
+				break;
         }
     }
 

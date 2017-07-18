@@ -9,12 +9,14 @@ FrameType.PeerMessage       = 1;
 FrameType.Login             = 2;
 FrameType.Register          = 3;
 FrameType.SearchUser        = 4;
-FrameType.FriendRequest     = 5;
-FrameType.FriendResponse    = 6;
-FrameType.FriendRefuse      = 7;
+FrameType.FriendTransaction = 5;
+FrameType.Unused_1   	    = 6;
+FrameType.Unused_2	        = 7;
 FrameType.TokenAssign       = 8;
 FrameType.MessageConfigure  = 9;
-FrameType.Error             = 10;
+FrameType.FriendListRequest = 10;
+FrameType.FriendListResponse= 11;
+FrameType.Error             = 12;
 
 var FrameVersion = 1;
 
@@ -62,6 +64,9 @@ function handleServerConnection(serverConnection){
 
     socket.on('message', handleMessage);
     socket.on('close', handleClose);
+	socket.on('error', function(err){
+		console.log('[ERROR]'.red + ' ' + err);
+	});
 
     function handleMessage(message){
         console.log('[SUCCEED]'.green + ' frame received: %j', message);
@@ -74,6 +79,21 @@ function handleServerConnection(serverConnection){
             case FrameType.PeerMessage:
                 forwardMessage();
                 break;
+
+			case FrameType.SearchUser:
+				searchUser();
+				break;
+
+			case FrameType.FriendTransaction:
+				dealFriendTransaction();
+				break;
+
+			case FrameType.FriendListRequest:
+				fetchFriendList();
+				break;
+
+			default:
+				break;
         }
 
         function identifyClient() {
@@ -169,6 +189,38 @@ function handleServerConnection(serverConnection){
             };
         }
 
+		function searchUser() {
+			var phoneNumber = message.data.phoneNumber;
+			var sql = 'select userName, gender, photo from users where phoneNumber = ?';
+			var sql_param = [phoneNumber];
+			queryDatabasePool(sql, sql_param, function(err, values, fields){
+				if (err) {
+					console.log('[FAILED]'.red + ' search user %s, err: %j', phoneNumber, err);
+					message.data = {success:false};
+					socket.sendMessage(message);
+					return;
+				}
+				if (values.length > 0) {
+					message.data.userName = values[0].userName;
+					message.data.gender = values[0].gender;
+					message.data.photo = values[0].photo;
+				} else {
+					message.data.type = 0;
+				};
+				socket.sendMessage(message);
+				console.log('[SUCCEED]'.green + ' search user %s', phoneNumber);
+			});
+		}
+// friend transaction can be merged into message
+		function dealFriendTransaction() {
+			var toPhoneNumber = message.data.to;
+			if (clients[toPhoneNumber]) {
+				var socket = clients[toPhoneNumber];
+				socket.sendMessage(message);
+				console.log('[SUCCEED]'.green + 'forward friend transaction to %s', toPhoneNumber);
+			};
+		}
+
         function configureMessage(tempID, currentID) {
             var data = {'tempID':tempID, 'currentID':currentID};
             var frame = createFrame(FrameType.MessageConfigure, data);
@@ -182,12 +234,29 @@ function handleServerConnection(serverConnection){
             sql_params = [message.data.ID, message.data.from, message.data.to, message.data.content, message.data.type, message.data.date];
             queryDatabasePool(sql, sql_params, function(err, values, fields){
             if (err) {
-                console.log('[FAILED]'.red + 'add message to stage: %j \nerr: %j', message.data, err);
+                console.log('[FAILED]'.red + ' add message to stage: %j \nerr: %j', message.data, err);
                 return;
             };
             console.log('[SUCCEED]'.green + ' add message to stage: %j, database: %j', message.data, values);
             });
         }
+		
+		function fetchFriendList() {
+			var phoneNumber = message.data.phoneNumber;
+			var tableName = 'f' + phoneNumber;
+			var sql = `select ${tableName}.phoneNumber, users.userName, users.gender, users.photo from users `;
+			sql += `inner join ${tableName} on users.phoneNumber = ${tableName}.phoneNumber`;
+			queryDatabasePool(sql, [], function(err, values, fields){
+				if (err){
+					console.log('[FAILED]'.red + 'fetch friend list for %s', phoneNumber);
+					return;
+				};
+
+				var frame = createFrame(FrameType.FriendListResponse, values);
+				socket.sendMessage(frame);
+				console.log('[SUCCEED]'.green + ' fetch friend list for %s', phoneNumber);
+			});
+		}
     }
 
     function handleClose(data){

@@ -5,9 +5,9 @@
     "main": "server.js",
     "author": "Tee-ee",
     "license": "ISC",
-    "repository": { 
-        "type" : "git", 
-        "url" : "http://github.com/Tee-ee/BarChatServer.git" 
+    "repository": {
+        "type": "git",
+        "url": "http://github.com/Tee-ee/BarChatServer.git"
     },
     "dependencies": {
         "json-socket": "~0.3.0",
